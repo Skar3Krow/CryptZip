@@ -7,7 +7,7 @@ fn main() {
         match stream {
             Ok(ref _stream) => {
                 println!("accepted new connection");
-                handle_client(stream.expect("REASON"));
+                handle_client(stream.expect("Failed to handle client request"));
             }
             Err(e) => {
                 println!("error: {}", e);
@@ -24,7 +24,10 @@ fn handle_client(mut stream: TcpStream) {
         if bytes_read == 0 {
             return;
         }
-
-        stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").expect("Failed to write to client");
+        if bytes_read > 40 {
+            stream.write_all(b"HTTP/1.1 404 Not Found\r\n\r\n").expect("Failed to write to client");
+        } else {
+            stream.write_all(b"HTTP/1.1 200 OK\r\n\r\n").expect("Failed to write to client");
+        }
     }
 }
