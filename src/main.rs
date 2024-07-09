@@ -25,6 +25,9 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
         "GET" => {
             if tokens[1] == "/" {
                 stream.write(b"HTTP/1.1 200 OK\r\n\r\n")?;
+            }else if tokens[1].starts_with("/user-agent") {
+                let response = lines[2].replace("User-Agent: ", "");
+                stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
             }else if tokens[1].starts_with("/echo/") {
                 let response = tokens[1].replace("/echo/", "");
                 stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
