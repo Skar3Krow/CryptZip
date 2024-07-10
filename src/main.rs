@@ -50,13 +50,20 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                 let response = tokens[1].replace("/echo/", "");
                 println!("Lines count:{:?} ", lines);
                 if lines.len() > 4 {
+                    let mut checker=false;
                     let invalidator : Vec<&str> = lines[2].split(" ").collect();
-                    if invalidator[1].starts_with("invalid-encoding") {
+                    for x in invalidator.iter() {
+                        if x.starts_with("gzip") {
+                            checker=true;
+                        }
+                    }
+                    if checker==true {
+                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {}\r\n\r\n{}", response.len(),response).as_bytes())?;
+                    }else {
                         stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
-                    }else{
-                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",invalidator[1..], response.len(), response).as_bytes())?;
                     }
                 }else {
+                    println!("P1");
                     stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
                 }
                 
