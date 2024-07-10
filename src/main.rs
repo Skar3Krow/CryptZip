@@ -1,4 +1,4 @@
-use std::{env, fs, io::{Read, Result, Write}, net::{TcpListener, TcpStream}, thread};
+use std::{env, fs::{self, File}, io::{Read, Result, Write}, net::{TcpListener, TcpStream}, thread};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();    
@@ -32,7 +32,7 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                 filepath.push('/');
                 filepath.push_str(&filename);
                 let file = fs::read(&filepath);
-                let mut response = String::from("");
+                let response;
                 match file {
                     Ok(f) => {
                         response=format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {}\r\n\r\n{}", f.len(), String::from_utf8(f).expect("File content"));
@@ -42,7 +42,7 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                         
                     }
                 }
-                stream.write(response.as_bytes());
+                let _ = stream.write(response.as_bytes());
             }else if tokens[1].starts_with("/user-agent") {
                 let response = lines[2].replace("User-Agent: ", "");
                 stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
@@ -51,6 +51,28 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                 stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
             }else {
                 stream.write(b"HTTP/1.1 404 Not Found\r\n\r\n")?;
+            }
+        },
+        "POST" => {
+            let length_finder : Vec<&str> = lines[2].split(" ").collect();
+            let my_int = length_finder[1].parse::<i32>().unwrap();
+            if tokens[1].starts_with("/files/") {
+                let filename = tokens[1].replace("/files/", "");
+                let env_args: Vec<_> = env::args().collect();
+                println!("Arguments: {:?}", env_args);
+                let mut filepath=env_args[2].clone();
+                filepath.push('/');
+                filepath.push_str(&filename);
+                let file = File::create_new(&filepath);
+                let response;
+                match file {
+                    Ok(mut f) => {
+                        f.write_all(lines[5][0..my_int as usize].as_bytes())?;
+                        response=format!("HTTP/1.1 201 Created\r\n\r\n")
+                    }
+                    Err(_) => response=format!("HTTP/1.1 404 Not Found\r\n\r\n"),
+                }
+                stream.write(response.as_bytes())?;
             }
         },
         _ => println!("Method not Found: {:?}", tokens[0])
