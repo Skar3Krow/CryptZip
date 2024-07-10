@@ -54,7 +54,7 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                     if invalidator[1].starts_with("invalid-encoding") {
                         stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
                     }else{
-                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",invalidator[1], response.len(), response).as_bytes())?;
+                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",invalidator[1..], response.len(), response).as_bytes())?;
                     }
                 }else {
                     stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
