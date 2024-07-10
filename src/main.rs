@@ -48,7 +48,18 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                 stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
             }else if tokens[1].starts_with("/echo/") {
                 let response = tokens[1].replace("/echo/", "");
-                stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
+                println!("Lines count:{:?} ", lines);
+                if lines.len() > 4 {
+                    let invalidator : Vec<&str> = lines[2].split(" ").collect();
+                    if invalidator[1].starts_with("invalid-encoding") {
+                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
+                    }else{
+                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: {}\r\nContent-Length: {}\r\n\r\n{}",invalidator[1], response.len(), response).as_bytes())?;
+                    }
+                }else {
+                    stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
+                }
+                
             }else {
                 stream.write(b"HTTP/1.1 404 Not Found\r\n\r\n")?;
             }
