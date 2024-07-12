@@ -1,4 +1,6 @@
 use std::{env, fs::{self, File}, io::{Read, Result, Write}, net::{TcpListener, TcpStream}, thread};
+use flate2::{write::GzEncoder, Compression};
+
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();    
@@ -42,13 +44,12 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                         
                     }
                 }
-                let _ = stream.write(response.as_bytes());
+                stream.write(response.as_bytes())?;
             }else if tokens[1].starts_with("/user-agent") {
                 let response = lines[2].replace("User-Agent: ", "");
                 stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
             }else if tokens[1].starts_with("/echo/") {
                 let response = tokens[1].replace("/echo/", "");
-                println!("Lines count:{:?} ", lines);
                 if lines.len() > 4 {
                     let mut checker=false;
                     let invalidator : Vec<&str> = lines[2].split(" ").collect();
@@ -58,7 +59,9 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
                         }
                     }
                     if checker==true {
-                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {}\r\n\r\n{}", response.len(),response).as_bytes())?;
+                        let (compressed, len) = get_gzip(response.to_owned());
+                        stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Encoding: gzip\r\nContent-Length: {}\r\n\r\n", len).as_bytes())?;
+                        stream.write(&compressed)?;
                     }else {
                         stream.write(format!("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: {}\r\n\r\n{}", response.len(), response).as_bytes())?;
                     }
@@ -98,4 +101,11 @@ fn handle_client(mut stream: TcpStream) -> Result<()>{
     }
     Ok(())
     
+}
+fn get_gzip(data: String) -> (Vec<u8>, usize) {
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(data.as_bytes()).unwrap();
+    let compressed = encoder.finish().unwrap();
+    let len = compressed.len();
+    (compressed, len)
 }
