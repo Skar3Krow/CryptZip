@@ -1,39 +1,114 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/64eaff79-64c8-48be-b287-3c7c6f682fcf)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# CryptZip
 
-This is a starting point for Rust solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+This documentation provides detailed information about the HTTP server implemented in Rust that supports simple GET/POST commands and gzip compression. The server is designed to handle basic key-value storage operations with efficient data transfer using gzip compression.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+## Features
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+1. GET Command: Retrieve the value associated with a specific key.
+2. POST Command: Store a value with a specific key.
+3. Gzip Compression: Support for gzip compression to reduce data transfer size.
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Requirements
 
-# Passing the first stage
+1. Rust (version 1.50 or later)
+2. cargo (version 1.7 or later)
+3. std crate for TCP Server, Buffer(Reader/Writer) and Threads
+4. flate2 crate for gzip compression
 
-The entry point for your HTTP server implementation is in `src/main.rs`. Study
-and uncomment the relevant code, and push your changes to pass the first stage:
+## Installation
+
+1. Clone the repository:
 
 ```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
+git clone https://github.com/Skar3Krow/CryptZip.git
+cd CryptZip
 ```
 
-Time to move on to the next stage!
+2. Ensure Rust is installed:
 
-# Stage 2 & beyond
+```sh
+rustc --version
+```
 
-Note: This section is for stages 2 and beyond.
+3. Build the project:
 
-1. Ensure you have `cargo (1.70)` installed locally
-1. Run `./your_server.sh` to run your program, which is implemented in
-   `src/main.rs`. This command compiles your Rust project, so it might be slow
-   the first time you run it. Subsequent runs will be fast.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+```sh
+cargo build --release
+```
+
+## Usage
+
+### Starting the Server
+To start the server, run the following command in the project directory:
+
+```sh
+cargo run --release
+./your_server.sh
+```
+The server will start listening on the default port 4221. You can customize the port by modifying the PORT constant in the main.rs file.
+
+## Supported Endpoints
+### GET /get
+
+Retrieve the value associated with a specific key.
+
+- URL: /get
+
+- Method: GET
+
+- Query Parameters:
+
+  - key: The key for which the value is to be retrieved.
+
+- Response:
+  - 200 OK: If the key exists.
+  - 404 Not Found: If the key does not exist.
+
+#### Example:
+
+1. echo
+```sh
+curl -v http://localhost:4221/echo/orange
+```
+
+2. Reading a header
+```sh
+curl -v http://localhost:4221/user-agent -H "User-Agent: pineapple/grape-orange"
+```
+
+4. Returning a file :
+   - Prints file content if file exists
+   - Shows 404 Not Found if file doesnt exist
+```sh
+curl -v http://localhost:4221/files/banana_banana_raspberry_grape
+```
+### POST /post
+
+Store a value with a specific key.
+
+- URL: /post
+
+- Method: POST
+
+- Request Body :
+
+  - key: The key to be stored.
+  - value: The value to be stored.
+- Response:
+
+  - 200 OK: If the value is successfully stored.
+    
+#### Example:
+
+- Read request body
+```sh
+curl -v -X POST http://localhost:4221/files/mango_banana_strawberry_pear -H "Content-Length: 64" -H "Content-Type: application/octet-stream" -d 'pineapple pear raspberry apple blueberry strawberry orange mango'
+```
+
+### Gzip Compression
+The server supports gzip compression to reduce the size of responses. To request gzip compression, include the Accept-Encoding: gzip header in your request.
+
+#### Example:
+```sh
+curl -v http://localhost:4221/echo/pear -H "Accept-Encoding: gzip"
+```
